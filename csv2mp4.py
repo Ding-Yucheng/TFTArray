@@ -90,50 +90,43 @@ def enhance_contrast(matrix: np.ndarray, method='percentile', clip_range=(5, 95)
     return matrix
 
 def create_heatmap_video(data_chunks: List[Tuple[str, np.ndarray]], output_path: str = 'heatmap_video', 
-                         fps: int = 8.16, contrast_method='histogram', clip_range=(5, 95), 
-                         figsize=(10, 8), dpi=300, only_heatmap=True) -> None:
+                         fps: int = 8.16, contrast_method='histogram', clip_range=(5, 95)) -> None:
     """创建热力图视频，支持对比度增强"""
     
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
-    
-    # 数据预处理
+    # 预处理数据以增强对比度
     processed_chunks = []
     for timestamp, matrix in data_chunks:
         processed_matrix = enhance_contrast(matrix, method=contrast_method, clip_range=clip_range)
         processed_chunks.append((timestamp, processed_matrix))
     
-    # 计算颜色范围
+    # 创建图形
+    fig, ax = plt.subplots(figsize=(10, 8))
+    
+    # 计算全局颜色范围（使用预处理后的数据）
     all_data = np.concatenate([matrix.flatten() for _, matrix in processed_chunks])
     vmin, vmax = np.percentile(all_data, 1), np.percentile(all_data, 99)
     
     # 初始化热力图
-    im = ax.imshow(np.zeros((64, 64)), cmap='gray', vmin=vmin, vmax=vmax, 
-                   interpolation='lanczos')
-    
-    # 如果只需要热力图区域，隐藏所有其他元素
-    if only_heatmap:
-        ax.axis('off')  # 隐藏坐标轴
-        plt.subplots_adjust(left=0, bottom=0, right=1, top=1)  # 移除边距
-    else:
-        plt.colorbar(im)
-        title = ax.set_title('')
+    im = ax.imshow(np.zeros((64, 64)), cmap='gray', vmin=vmin, vmax=vmax,interpolation='lanczos')
+    plt.colorbar(im)
+    title = ax.set_title('')
     
     def update(frame):
-        timestamp, matrix = processed_chunks[frame]
+        """更新每一帧的热力图"""
+        timestamp, matrix = data_chunks[frame]
         im.set_data(matrix)
-        if not only_heatmap:
-            title.set_text(f'Heatmap at {timestamp}')
-        return im,
+        title.set_text(f'Heatmap at {timestamp}')
+        return im, title
     
     # 创建动画
-    ani = animation.FuncAnimation(fig, update, frames=len(processed_chunks), 
+    ani = animation.FuncAnimation(fig, update, frames=len(data_chunks), 
                                   interval=1000/fps, blit=True)
     
     # 保存视频
     ani.save(output_path, writer='ffmpeg', fps=fps)
-    plt.close()
     
-    print(f"视频已保存为: {output_file}")
+    # 关闭图形以释放内存
+    plt.close()
 
 def main(file_path: str) -> None:
     """
@@ -157,5 +150,5 @@ def main(file_path: str) -> None:
 
 if __name__ == "__main__":
     # 示例调用
-    csv_file_path = 'video1mod.csv'  # 替换为你的CSV文件路径
+    csv_file_path = 'video3mod.csv'  # 替换为你的CSV文件路径
     main(csv_file_path)
