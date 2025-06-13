@@ -150,5 +150,5 @@ def main(file_path: str) -> None:
 
 if __name__ == "__main__":
     # 示例调用
-    csv_file_path = 'video3mod.csv'  # 替换为你的CSV文件路径
+    csv_file_path = 'video6mod.csv'  # 替换为你的CSV文件路径
     main(csv_file_path)
